@@ -1,358 +1,199 @@
-const today = () => new Date().toISOString().slice(0, 10);
-const uid = () => Math.random().toString(36).slice(2, 10);
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CutCoach" />
+  <title>CutCoach</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">CutCoach <span class="version-chip">v0.2</span></p>
+        <h1 id="greeting">Today</h1>
+      </div>
+      <button class="icon-button" id="themeToggle" type="button" aria-label="Toggle theme">☾</button>
+    </header>
 
-const DEFAULTS = {
-  goals: { calories: 1700, protein: 160, carbs: 140, fat: 55, startWeight: 243.8, currentWeight: 208.8, goalWeight: 175, goalDate: '2026-10-01', activityCalories: 350 },
-  foods: [],
-  weights: [],
-  water: {},
-  steps: {},
-  savedMeals: [
-    { name: 'Chicken Lunch meal', meal: 'Lunch', cal: 600, p: 50, c: 45, f: 15 },
-    { name: '4.4 oz cooked ground chicken', meal: 'Lunch', cal: 235, p: 36, c: 0, f: 10 },
-    { name: '5 oz cooked white rice', meal: 'Lunch', cal: 185, p: 4, c: 40, f: 0 },
-    { name: 'Avocado oil 1g', meal: 'Snack', cal: 9, p: 0, c: 0, f: 1 }
-  ],
-  theme: 'dark'
-};
+    <section id="screen-home" class="screen active" aria-labelledby="home-title">
+      <div class="quick-row" aria-label="Quick actions">
+        <button type="button" data-quick-tab="food">+ Food</button>
+        <button type="button" data-quick-water="16">+16 oz</button>
+        <button type="button" data-quick-tab="progress">Log weight</button>
+      </div>
+      <div class="hero-card">
+        <div>
+          <p class="muted">Current weight</p>
+          <div class="hero-value"><span id="currentWeightText">208.8</span><small>lb</small></div>
+          <p class="muted"><span id="lostText">35.0</span> lb lost • <span id="toGoalText">33.8</span> lb to goal</p>
+        </div>
+        <div class="goal-ring" aria-label="Goal progress">
+          <svg viewBox="0 0 120 120" role="img">
+            <circle cx="60" cy="60" r="50" class="ring-bg"></circle>
+            <circle cx="60" cy="60" r="50" class="ring-fg" id="goalRing"></circle>
+          </svg>
+          <div class="ring-label"><strong id="goalPct">51%</strong><span>goal</span></div>
+        </div>
+      </div>
 
-let state = loadState();
-let cameraStream = null;
+      <div class="metric-grid">
+        <article class="metric-card">
+          <div class="metric-label">Calories</div>
+          <div class="metric-value"><span id="caloriesTotal">0</span><small>/ <span id="calorieGoalText">1700</span></small></div>
+          <div class="progress"><span id="calorieBar"></span></div>
+          <p id="calorieSub" class="metric-sub">1700 left</p>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">Protein</div>
+          <div class="metric-value"><span id="proteinTotal">0</span><small>g / <span id="proteinGoalText">160</span>g</small></div>
+          <div class="progress"><span id="proteinBar"></span></div>
+          <p id="proteinSub" class="metric-sub">160g left</p>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">Water</div>
+          <div class="metric-value"><span id="waterTotal">0</span><small>oz</small></div>
+          <div class="stepper">
+            <button type="button" data-water="8">+8</button>
+            <button type="button" data-water="16">+16</button>
+            <button type="button" id="waterReset">Reset</button>
+          </div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">Steps</div>
+          <div class="metric-value"><span id="stepsText">10000</span></div>
+          <input id="stepsInput" class="mini-input" type="number" min="0" step="100" />
+        </article>
+      </div>
 
-function loadState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('cutcoach-v02') || 'null');
-    return saved ? { ...DEFAULTS, ...saved, goals: { ...DEFAULTS.goals, ...(saved.goals || {}) } } : structuredClone(DEFAULTS);
-  } catch {
-    return structuredClone(DEFAULTS);
-  }
-}
+      <article class="coach-card">
+        <div class="coach-head"><span>🤖</span><strong>Coach</strong></div>
+        <p id="homeCoach">Log your meals and weight to get personalized guidance.</p>
+      </article>
+    </section>
 
-function saveState() {
-  localStorage.setItem('cutcoach-v02', JSON.stringify(state));
-}
+    <section id="screen-food" class="screen" aria-labelledby="food-title">
+      <div class="section-head">
+        <h2 id="food-title">Food log</h2>
+        <button class="primary small" id="copyYesterday" type="button">Copy yesterday</button>
+      </div>
 
-function $(id) { return document.getElementById(id); }
-function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-function num(v) { return Number(v) || 0; }
+      <form class="panel" id="foodForm">
+        <label>Food name<input id="foodName" required autocomplete="off" /></label>
+        <div class="two-col">
+          <label>Meal<select id="mealType"><option>Breakfast</option><option selected>Lunch</option><option>Dinner</option><option>Snack</option><option>Drinks</option></select></label>
+          <label>Calories<input id="foodCal" type="number" inputmode="decimal" min="0" value="600" /></label>
+        </div>
+        <div class="four-col">
+          <label>Protein<input id="foodProtein" type="number" inputmode="decimal" min="0" value="50" /></label>
+          <label>Carbs<input id="foodCarbs" type="number" inputmode="decimal" min="0" value="45" /></label>
+          <label>Fat<input id="foodFat" type="number" inputmode="decimal" min="0" value="15" /></label>
+          <label>Servings<input id="foodServings" type="number" inputmode="decimal" min="0.1" step="0.1" value="1" /></label>
+        </div>
+        <div class="actions-row">
+          <button class="primary" type="submit">+ Add food</button>
+          <button class="secondary" id="saveMeal" type="button">Save meal</button>
+        </div>
+      </form>
 
-function todayFoods() { return state.foods.filter(f => f.date === today()); }
-function totalsForFoods(items) { return items.reduce((a, f) => ({ cal: a.cal + f.cal, p: a.p + f.p, c: a.c + f.c, f: a.f + f.f }), { cal: 0, p: 0, c: 0, f: 0 }); }
-function daysBetween(a, b) { return Math.max(1, Math.round((new Date(b) - new Date(a)) / 86400000)); }
-function latestWeight() { return state.weights.length ? state.weights[state.weights.length - 1].lbs : state.goals.currentWeight; }
+      <div class="panel">
+        <h3>Saved meals</h3>
+        <div id="savedMeals" class="chip-list"></div>
+      </div>
 
-function setTab(tab) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  $(`screen-${tab}`).classList.add('active');
-  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  render();
-}
+      <div class="panel">
+        <h3>Today’s food</h3>
+        <div id="foodList" class="list-empty">No food logged yet.</div>
+      </div>
+    </section>
 
-function render() {
-  saveState();
-  renderTheme();
-  renderGreeting();
-  renderHome();
-  renderFood();
-  renderProgress();
-  renderCoach();
-  renderGoals();
-}
+    <section id="screen-progress" class="screen" aria-labelledby="progress-title">
+      <div class="section-head"><h2 id="progress-title">Progress</h2></div>
+      <div class="metric-grid">
+        <article class="metric-card"><div class="metric-label">Goal date</div><div class="metric-value text"><span id="goalDateText">2026-10-01</span></div><p class="metric-sub">Your target</p></article>
+        <article class="metric-card"><div class="metric-label">Needed pace</div><div class="metric-value"><span id="neededPace">0.0</span><small>lb/wk</small></div><p class="metric-sub" id="neededDeficit">0 cal/day</p></article>
+        <article class="metric-card"><div class="metric-label">Projection</div><div class="metric-value text"><span id="projectionDate">—</span></div><p class="metric-sub">Based on settings</p></article>
+        <article class="metric-card"><div class="metric-label">Logged days</div><div class="metric-value"><span id="loggedDays">0</span></div><p class="metric-sub">food or weight</p></article>
+      </div>
 
-function renderTheme() {
-  document.documentElement.classList.toggle('light', state.theme === 'light');
-  $('themeToggle').textContent = state.theme === 'light' ? '☀' : '☾';
-}
+      <form class="panel" id="weightForm">
+        <h3>Log weight</h3>
+        <div class="actions-row">
+          <input id="weightInput" type="number" inputmode="decimal" step="0.1" placeholder="Weight" />
+          <button class="primary" type="submit">Log</button>
+        </div>
+      </form>
 
-function renderGreeting() {
-  const h = new Date().getHours();
-  const word = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  $('greeting').textContent = `${word}, Justin`;
-}
+      <div class="panel">
+        <h3>Weight trend</h3>
+        <canvas id="weightChart" width="360" height="160" aria-label="Weight chart"></canvas>
+        <div id="weightList" class="compact-list"></div>
+      </div>
+    </section>
 
-function renderHome() {
-  const totals = totalsForFoods(todayFoods());
-  const water = state.water[today()] || 0;
-  const steps = state.steps[today()] ?? 10000;
-  const weight = latestWeight();
-  const lost = Math.max(0, state.goals.startWeight - weight);
-  const toGoal = Math.max(0, weight - state.goals.goalWeight);
-  const goalSpan = Math.max(1, state.goals.startWeight - state.goals.goalWeight);
-  const pct = clamp(Math.round((lost / goalSpan) * 100), 0, 100);
+    <section id="screen-coach" class="screen" aria-labelledby="coach-title">
+      <div class="section-head"><h2 id="coach-title">Digital coach</h2></div>
+      <div id="coachNotes" class="coach-stack"></div>
+      <div class="panel">
+        <h3>Ask CutCoach</h3>
+        <textarea id="coachQuestion" rows="4" placeholder="Example: Can I fit pizza tonight?"></textarea>
+        <button class="primary full" id="askCoach" type="button">Get answer</button>
+        <p id="coachAnswer" class="coach-answer">This version uses your local app data for simple coaching. We’ll add true AI later.</p>
+      </div>
+    </section>
 
-  $('currentWeightText').textContent = weight.toFixed(1);
-  $('lostText').textContent = lost.toFixed(1);
-  $('toGoalText').textContent = toGoal.toFixed(1);
-  $('goalPct').textContent = `${pct}%`;
-  $('goalRing').style.strokeDashoffset = String(314 - (314 * pct / 100));
+    <section id="screen-more" class="screen" aria-labelledby="more-title">
+      <div class="section-head"><h2 id="more-title">More</h2></div>
+      <form class="panel" id="goalsForm">
+        <h3>Goals</h3>
+        <div class="two-col">
+          <label>Calories<input id="goalCalories" type="number" min="0" /></label>
+          <label>Protein<input id="goalProtein" type="number" min="0" /></label>
+          <label>Carbs<input id="goalCarbs" type="number" min="0" /></label>
+          <label>Fat<input id="goalFat" type="number" min="0" /></label>
+          <label>Start weight<input id="startWeight" type="number" step="0.1" /></label>
+          <label>Current weight<input id="settingsCurrentWeight" type="number" step="0.1" /></label>
+          <label>Goal weight<input id="goalWeight" type="number" step="0.1" /></label>
+          <label>Daily activity cal<input id="activityCalories" type="number" /></label>
+        </div>
+        <label>Goal date<input id="goalDate" type="date" /></label>
+        <button class="primary full" type="submit">Save goals</button>
+      </form>
 
-  $('caloriesTotal').textContent = Math.round(totals.cal);
-  $('calorieGoalText').textContent = state.goals.calories;
-  $('calorieBar').style.width = `${clamp((totals.cal / state.goals.calories) * 100, 0, 100)}%`;
-  $('calorieSub').textContent = totals.cal <= state.goals.calories ? `${Math.round(state.goals.calories - totals.cal)} left` : `${Math.round(totals.cal - state.goals.calories)} over`;
+      <div class="panel">
+        <h3>Barcode lookup</h3>
+        <p class="muted">Uses Open Food Facts when online. Camera barcode detection depends on browser support.</p>
+        <div class="actions-row">
+          <input id="barcodeInput" placeholder="UPC / barcode" inputmode="numeric" />
+          <button class="secondary" id="lookupBarcode" type="button">Lookup</button>
+        </div>
+        <button class="primary full" id="startCamera" type="button">Start camera scanner</button>
+        <video id="cameraPreview" class="camera" autoplay playsinline></video>
+        <p id="barcodeMessage" class="muted small-text">Manual UPC entry always works as fallback.</p>
+      </div>
 
-  $('proteinTotal').textContent = Math.round(totals.p);
-  $('proteinGoalText').textContent = state.goals.protein;
-  $('proteinBar').style.width = `${clamp((totals.p / state.goals.protein) * 100, 0, 100)}%`;
-  $('proteinSub').textContent = `${Math.max(0, Math.round(state.goals.protein - totals.p))}g left`;
+      <div class="panel danger-zone">
+        <h3>Data</h3>
+        <button class="secondary" id="exportData" type="button">Export backup</button>
+        <button class="danger" id="resetData" type="button">Reset app data</button>
+      </div>
+    </section>
+  </main>
 
-  $('waterTotal').textContent = water;
-  $('stepsText').textContent = steps.toLocaleString();
-  $('stepsInput').value = steps;
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button type="button" class="active" data-tab="home">🏠<span>Home</span></button>
+    <button type="button" data-tab="food">🍗<span>Food</span></button>
+    <button type="button" data-tab="progress">📈<span>Progress</span></button>
+    <button type="button" data-tab="coach">🤖<span>Coach</span></button>
+    <button type="button" data-tab="more">⚙️<span>More</span></button>
+  </nav>
 
-  const remaining = Math.round(state.goals.calories - totals.cal);
-  const proteinLeft = Math.max(0, Math.round(state.goals.protein - totals.p));
-  $('homeCoach').textContent = remaining >= 0
-    ? `${remaining} calories left today. Protein remaining: ${proteinLeft}g. Keep it simple and high-protein.`
-    : `You are ${Math.abs(remaining)} calories over. Don't spiral — finish the day lean and reset tomorrow.`;
-}
-
-function renderFood() {
-  const saved = $('savedMeals');
-  saved.innerHTML = '';
-  state.savedMeals.forEach(meal => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = `${meal.name} · ${meal.cal} cal · ${meal.p}g P`;
-    b.addEventListener('click', () => fillFoodForm(meal));
-    saved.appendChild(b);
-  });
-
-  const list = $('foodList');
-  const foods = todayFoods();
-  if (!foods.length) {
-    list.className = 'list-empty';
-    list.textContent = 'No food logged yet.';
-    return;
-  }
-  list.className = '';
-  list.innerHTML = '';
-  foods.forEach(food => {
-    const row = document.createElement('div');
-    row.className = 'food-row';
-    row.innerHTML = `<div><strong>${food.name}</strong><small>${food.meal} • ${food.cal} cal • P ${food.p} C ${food.c} F ${food.f}</small></div>`;
-    const del = document.createElement('button');
-    del.type = 'button';
-    del.className = 'trash';
-    del.textContent = 'Delete';
-    del.addEventListener('click', () => { state.foods = state.foods.filter(f => f.id !== food.id); render(); });
-    row.appendChild(del);
-    list.appendChild(row);
-  });
-}
-
-function renderProgress() {
-  const weight = latestWeight();
-  const lbsToLose = Math.max(0, weight - state.goals.goalWeight);
-  const d = daysBetween(today(), state.goals.goalDate);
-  const weeklyNeeded = lbsToLose / (d / 7);
-  const deficit = Math.round((lbsToLose * 3500) / d);
-  const estimatedWeekly = Math.max(0.1, ((state.goals.activityCalories + (2200 - state.goals.calories)) * 7) / 3500);
-  const projection = new Date(Date.now() + (lbsToLose / estimatedWeekly) * 7 * 86400000).toISOString().slice(0, 10);
-  const loggedDays = new Set([...state.foods.map(f => f.date), ...state.weights.map(w => w.date)]).size;
-
-  $('goalDateText').textContent = state.goals.goalDate;
-  $('neededPace').textContent = weeklyNeeded.toFixed(1);
-  $('neededDeficit').textContent = `${deficit} cal/day deficit`;
-  $('projectionDate').textContent = projection;
-  $('loggedDays').textContent = loggedDays;
-
-  renderWeightList();
-  drawWeightChart();
-}
-
-function renderWeightList() {
-  const list = $('weightList');
-  list.innerHTML = '';
-  if (!state.weights.length) {
-    list.textContent = 'No weights logged yet.';
-    return;
-  }
-  state.weights.slice().reverse().slice(0, 8).forEach(w => {
-    const row = document.createElement('div');
-    row.className = 'weight-row';
-    row.innerHTML = `<span>${w.date}</span><strong>${w.lbs.toFixed(1)} lb</strong>`;
-    list.appendChild(row);
-  });
-}
-
-function drawWeightChart() {
-  const canvas = $('weightChart');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const weights = state.weights.slice(-12);
-  ctx.strokeStyle = 'rgba(255,255,255,.12)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 4; i++) {
-    const y = 20 + i * 36;
-    ctx.beginPath(); ctx.moveTo(12, y); ctx.lineTo(348, y); ctx.stroke();
-  }
-  if (weights.length < 2) {
-    ctx.fillStyle = 'rgba(255,255,255,.55)';
-    ctx.font = '14px system-ui';
-    ctx.fillText('Log two weights to see a trend.', 72, 86);
-    return;
-  }
-  const vals = weights.map(w => w.lbs);
-  const min = Math.min(...vals) - 1;
-  const max = Math.max(...vals) + 1;
-  const xStep = 336 / (weights.length - 1);
-  ctx.strokeStyle = '#34d399';
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  weights.forEach((w, i) => {
-    const x = 12 + i * xStep;
-    const y = 140 - ((w.lbs - min) / (max - min)) * 116;
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-}
-
-function renderCoach() {
-  const totals = totalsForFoods(todayFoods());
-  const remaining = Math.round(state.goals.calories - totals.cal);
-  const proteinLeft = Math.max(0, Math.round(state.goals.protein - totals.p));
-  const weight = latestWeight();
-  const toGoal = Math.max(0, weight - state.goals.goalWeight);
-  const days = daysBetween(today(), state.goals.goalDate);
-  const weeklyNeeded = toGoal / (days / 7);
-  const notes = [
-    { title: 'Today', text: remaining >= 0 ? `${remaining} calories left. Prioritize protein before snacks.` : `You're ${Math.abs(remaining)} calories over. Keep the rest lean and move on.` },
-    { title: 'Protein', text: proteinLeft > 0 ? `${proteinLeft}g protein left. A Chicken Lunch meal gets you most of the way there.` : `Protein goal hit. Nice work.` },
-    { title: 'Goal pace', text: `To reach ${state.goals.goalWeight} by ${state.goals.goalDate}, current needed pace is ${weeklyNeeded.toFixed(1)} lb/week.` }
-  ];
-  const wrap = $('coachNotes');
-  wrap.innerHTML = '';
-  notes.forEach(n => {
-    const div = document.createElement('article');
-    div.className = 'coach-note';
-    div.innerHTML = `<strong>${n.title}</strong><span>${n.text}</span>`;
-    wrap.appendChild(div);
-  });
-}
-
-function renderGoals() {
-  $('goalCalories').value = state.goals.calories;
-  $('goalProtein').value = state.goals.protein;
-  $('goalCarbs').value = state.goals.carbs;
-  $('goalFat').value = state.goals.fat;
-  $('startWeight').value = state.goals.startWeight;
-  $('settingsCurrentWeight').value = latestWeight();
-  $('goalWeight').value = state.goals.goalWeight;
-  $('activityCalories').value = state.goals.activityCalories;
-  $('goalDate').value = state.goals.goalDate;
-}
-
-function fillFoodForm(food) {
-  $('foodName').value = food.name;
-  $('mealType').value = food.meal || 'Lunch';
-  $('foodCal').value = food.cal;
-  $('foodProtein').value = food.p;
-  $('foodCarbs').value = food.c;
-  $('foodFat').value = food.f;
-  $('foodServings').value = 1;
-  setTab('food');
-}
-
-function addFoodFromForm() {
-  const servings = Math.max(0.1, num($('foodServings').value));
-  const food = {
-    id: uid(),
-    date: today(),
-    name: $('foodName').value.trim() || 'Food',
-    meal: $('mealType').value,
-    cal: Math.round(num($('foodCal').value) * servings),
-    p: Math.round(num($('foodProtein').value) * servings),
-    c: Math.round(num($('foodCarbs').value) * servings),
-    f: Math.round(num($('foodFat').value) * servings)
-  };
-  state.foods.unshift(food);
-  render();
-}
-
-async function lookupBarcode() {
-  const code = $('barcodeInput').value.trim();
-  if (!code) { $('barcodeMessage').textContent = 'Enter a barcode first.'; return; }
-  $('barcodeMessage').textContent = 'Looking up barcode...';
-  try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
-    const data = await res.json();
-    if (!data.product) { $('barcodeMessage').textContent = 'No product found. Add it manually.'; return; }
-    const n = data.product.nutriments || {};
-    const meal = {
-      name: data.product.product_name || 'Scanned food',
-      meal: 'Snack',
-      cal: Math.round(n['energy-kcal_serving'] || n['energy-kcal_100g'] || 0),
-      p: Math.round(n.proteins_serving || n.proteins_100g || 0),
-      c: Math.round(n.carbohydrates_serving || n.carbohydrates_100g || 0),
-      f: Math.round(n.fat_serving || n.fat_100g || 0)
-    };
-    fillFoodForm(meal);
-    $('barcodeMessage').textContent = `Found ${meal.name}. Review and add.`;
-  } catch {
-    $('barcodeMessage').textContent = 'Lookup failed. Try manual entry.';
-  }
-}
-
-async function startCamera() {
-  const video = $('cameraPreview');
-  try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    video.style.display = 'block';
-    video.srcObject = cameraStream;
-    const BarcodeDetectorClass = window.BarcodeDetector;
-    if (!BarcodeDetectorClass) { $('barcodeMessage').textContent = 'Camera works, but this browser does not support barcode detection. Type the UPC.'; return; }
-    const detector = new BarcodeDetectorClass({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
-    const timer = setInterval(async () => {
-      const codes = await detector.detect(video);
-      if (codes[0]) {
-        clearInterval(timer);
-        $('barcodeInput').value = codes[0].rawValue;
-        cameraStream.getTracks().forEach(t => t.stop());
-        video.style.display = 'none';
-        lookupBarcode();
-      }
-    }, 700);
-  } catch {
-    $('barcodeMessage').textContent = 'Camera unavailable. Type the barcode manually.';
-  }
-}
-
-function bindEvents() {
-  document.querySelectorAll('.bottom-nav button').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
-  document.querySelectorAll('[data-quick-tab]').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.quickTab)));
-  document.querySelectorAll('[data-water]').forEach(btn => btn.addEventListener('click', () => { state.water[today()] = (state.water[today()] || 0) + num(btn.dataset.water); render(); }));
-  document.querySelectorAll('[data-quick-water]').forEach(btn => btn.addEventListener('click', () => { state.water[today()] = (state.water[today()] || 0) + num(btn.dataset.quickWater); render(); }));
-  $('waterReset').addEventListener('click', () => { state.water[today()] = 0; render(); });
-  $('stepsInput').addEventListener('change', () => { state.steps[today()] = num($('stepsInput').value); render(); });
-  $('themeToggle').addEventListener('click', () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; render(); });
-  $('foodForm').addEventListener('submit', e => { e.preventDefault(); addFoodFromForm(); });
-  $('saveMeal').addEventListener('click', () => { state.savedMeals.unshift({ name: $('foodName').value.trim() || 'Food', meal: $('mealType').value, cal: num($('foodCal').value), p: num($('foodProtein').value), c: num($('foodCarbs').value), f: num($('foodFat').value) }); render(); });
-  $('copyYesterday').addEventListener('click', () => {
-    const d = new Date(); d.setDate(d.getDate() - 1); const y = d.toISOString().slice(0, 10);
-    const copied = state.foods.filter(f => f.date === y).map(f => ({ ...f, id: uid(), date: today() }));
-    state.foods = [...copied, ...state.foods]; render();
-  });
-  $('weightForm').addEventListener('submit', e => { e.preventDefault(); const v = num($('weightInput').value); if (v) { state.weights.push({ id: uid(), date: today(), lbs: v }); state.goals.currentWeight = v; $('weightInput').value = ''; render(); } });
-  $('goalsForm').addEventListener('submit', e => {
-    e.preventDefault();
-    state.goals = { calories: num($('goalCalories').value), protein: num($('goalProtein').value), carbs: num($('goalCarbs').value), fat: num($('goalFat').value), startWeight: num($('startWeight').value), currentWeight: num($('settingsCurrentWeight').value), goalWeight: num($('goalWeight').value), activityCalories: num($('activityCalories').value), goalDate: $('goalDate').value || '2026-10-01' };
-    render();
-  });
-  $('askCoach').addEventListener('click', () => {
-    const q = $('coachQuestion').value.toLowerCase();
-    const totals = totalsForFoods(todayFoods());
-    const remaining = state.goals.calories - totals.cal;
-    if (q.includes('pizza')) $('coachAnswer').textContent = remaining >= 500 ? `Yes. You have about ${Math.round(remaining)} calories left, so 1-2 lighter slices can fit.` : `Pizza is tight today. You have about ${Math.round(remaining)} calories left, so keep it very portion-controlled or save it for tomorrow.`;
-    else $('coachAnswer').textContent = `Today: ${Math.round(totals.cal)} calories, ${Math.round(totals.p)}g protein. You have ${Math.round(remaining)} calories left and ${Math.max(0, Math.round(state.goals.protein - totals.p))}g protein left.`;
-  });
-  $('lookupBarcode').addEventListener('click', lookupBarcode);
-  $('startCamera').addEventListener('click', startCamera);
-  $('exportData').addEventListener('click', () => { const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `cutcoach-backup-${today()}.json`; a.click(); });
-  $('resetData').addEventListener('click', () => { if (confirm('Reset all CutCoach data?')) { localStorage.removeItem('cutcoach-v02'); state = structuredClone(DEFAULTS); render(); } });
-}
-
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-bindEvents();
-render();
+  <script src="app.js" defer></script>
+</body>
+</html>
