@@ -1,11 +1,10 @@
 {
   "name": "CutCoach",
   "short_name": "CutCoach",
-  "description": "A simple phone-installable diet coaching app.",
-  "start_url": "./index.html",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#0f172a",
+  "background_color": "#06110d",
+  "theme_color": "#06110d",
   "icons": [
     { "src": "icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
     { "src": "icons/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }

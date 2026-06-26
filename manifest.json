@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#07120d" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="CutCoach" />
@@ -16,7 +16,7 @@
   <main class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">CutCoach <span class="version-chip">v0.2</span></p>
+        <p class="eyebrow">CutCoach <span class="version-chip">v0.2 verified</span></p>
         <h1 id="greeting">Today</h1>
       </div>
       <button class="icon-button" id="themeToggle" type="button" aria-label="Toggle theme">☾</button>
@@ -28,6 +28,7 @@
         <button type="button" data-quick-water="16">+16 oz</button>
         <button type="button" data-quick-tab="progress">Log weight</button>
       </div>
+
       <div class="hero-card">
         <div>
           <p class="muted">Current weight</p>
