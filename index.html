@@ -28,12 +28,14 @@
         <button type="button" data-quick-water="16">+16 oz</button>
         <button type="button" data-quick-tab="progress">Log weight</button>
       </div>
+
       <div class="hero-card">
         <div>
           <p class="muted">Current weight</p>
           <div class="hero-value"><span id="currentWeightText">208.8</span><small>lb</small></div>
           <p class="muted"><span id="lostText">35.0</span> lb lost • <span id="toGoalText">33.8</span> lb to goal</p>
         </div>
+
         <div class="goal-ring" aria-label="Goal progress">
           <svg viewBox="0 0 120 120" role="img">
             <circle cx="60" cy="60" r="50" class="ring-bg"></circle>
@@ -50,12 +52,14 @@
           <div class="progress"><span id="calorieBar"></span></div>
           <p id="calorieSub" class="metric-sub">1700 left</p>
         </article>
+
         <article class="metric-card">
           <div class="metric-label">Protein</div>
           <div class="metric-value"><span id="proteinTotal">0</span><small>g / <span id="proteinGoalText">160</span>g</small></div>
           <div class="progress"><span id="proteinBar"></span></div>
           <p id="proteinSub" class="metric-sub">160g left</p>
         </article>
+
         <article class="metric-card">
           <div class="metric-label">Water</div>
           <div class="metric-value"><span id="waterTotal">0</span><small>oz</small></div>
@@ -65,6 +69,7 @@
             <button type="button" id="waterReset">Reset</button>
           </div>
         </article>
+
         <article class="metric-card">
           <div class="metric-label">Steps</div>
           <div class="metric-value"><span id="stepsText">10000</span></div>
@@ -86,16 +91,27 @@
 
       <form class="panel" id="foodForm">
         <label>Food name<input id="foodName" required autocomplete="off" /></label>
+
         <div class="two-col">
-          <label>Meal<select id="mealType"><option>Breakfast</option><option selected>Lunch</option><option>Dinner</option><option>Snack</option><option>Drinks</option></select></label>
+          <label>Meal
+            <select id="mealType">
+              <option>Breakfast</option>
+              <option selected>Lunch</option>
+              <option>Dinner</option>
+              <option>Snack</option>
+              <option>Drinks</option>
+            </select>
+          </label>
           <label>Calories<input id="foodCal" type="number" inputmode="decimal" min="0" value="600" /></label>
         </div>
+
         <div class="four-col">
           <label>Protein<input id="foodProtein" type="number" inputmode="decimal" min="0" value="50" /></label>
           <label>Carbs<input id="foodCarbs" type="number" inputmode="decimal" min="0" value="45" /></label>
           <label>Fat<input id="foodFat" type="number" inputmode="decimal" min="0" value="15" /></label>
           <label>Servings<input id="foodServings" type="number" inputmode="decimal" min="0.1" step="0.1" value="1" /></label>
         </div>
+
         <div class="actions-row">
           <button class="primary" type="submit">+ Add food</button>
           <button class="secondary" id="saveMeal" type="button">Save meal</button>
@@ -115,11 +131,31 @@
 
     <section id="screen-progress" class="screen" aria-labelledby="progress-title">
       <div class="section-head"><h2 id="progress-title">Progress</h2></div>
+
       <div class="metric-grid">
-        <article class="metric-card"><div class="metric-label">Goal date</div><div class="metric-value text"><span id="goalDateText">2026-10-01</span></div><p class="metric-sub">Your target</p></article>
-        <article class="metric-card"><div class="metric-label">Needed pace</div><div class="metric-value"><span id="neededPace">0.0</span><small>lb/wk</small></div><p class="metric-sub" id="neededDeficit">0 cal/day</p></article>
-        <article class="metric-card"><div class="metric-label">Projection</div><div class="metric-value text"><span id="projectionDate">—</span></div><p class="metric-sub">Based on settings</p></article>
-        <article class="metric-card"><div class="metric-label">Logged days</div><div class="metric-value"><span id="loggedDays">0</span></div><p class="metric-sub">food or weight</p></article>
+        <article class="metric-card">
+          <div class="metric-label">Goal date</div>
+          <div class="metric-value text"><span id="goalDateText">2026-10-01</span></div>
+          <p class="metric-sub">Your target</p>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-label">Needed pace</div>
+          <div class="metric-value"><span id="neededPace">0.0</span><small>lb/wk</small></div>
+          <p class="metric-sub" id="neededDeficit">0 cal/day</p>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-label">Projection</div>
+          <div class="metric-value text"><span id="projectionDate">—</span></div>
+          <p class="metric-sub">Based on settings</p>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-label">Logged days</div>
+          <div class="metric-value"><span id="loggedDays">0</span></div>
+          <p class="metric-sub">food or weight</p>
+        </article>
       </div>
 
       <form class="panel" id="weightForm">
@@ -140,6 +176,7 @@
     <section id="screen-coach" class="screen" aria-labelledby="coach-title">
       <div class="section-head"><h2 id="coach-title">Digital coach</h2></div>
       <div id="coachNotes" class="coach-stack"></div>
+
       <div class="panel">
         <h3>Ask CutCoach</h3>
         <textarea id="coachQuestion" rows="4" placeholder="Example: Can I fit pizza tonight?"></textarea>
@@ -150,8 +187,10 @@
 
     <section id="screen-more" class="screen" aria-labelledby="more-title">
       <div class="section-head"><h2 id="more-title">More</h2></div>
+
       <form class="panel" id="goalsForm">
         <h3>Goals</h3>
+
         <div class="two-col">
           <label>Calories<input id="goalCalories" type="number" min="0" /></label>
           <label>Protein<input id="goalProtein" type="number" min="0" /></label>
@@ -162,6 +201,7 @@
           <label>Goal weight<input id="goalWeight" type="number" step="0.1" /></label>
           <label>Daily activity cal<input id="activityCalories" type="number" /></label>
         </div>
+
         <label>Goal date<input id="goalDate" type="date" /></label>
         <button class="primary full" type="submit">Save goals</button>
       </form>
@@ -169,10 +209,12 @@
       <div class="panel">
         <h3>Barcode lookup</h3>
         <p class="muted">Uses Open Food Facts when online. Camera barcode detection depends on browser support.</p>
+
         <div class="actions-row">
           <input id="barcodeInput" placeholder="UPC / barcode" inputmode="numeric" />
           <button class="secondary" id="lookupBarcode" type="button">Lookup</button>
         </div>
+
         <button class="primary full" id="startCamera" type="button">Start camera scanner</button>
         <video id="cameraPreview" class="camera" autoplay playsinline></video>
         <p id="barcodeMessage" class="muted small-text">Manual UPC entry always works as fallback.</p>
